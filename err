@@ -1,0 +1,18 @@
+badger 2022/05/19 20:43:04 INFO: All 1 tables opened in 1ms
+badger 2022/05/19 20:43:04 INFO: Replaying file id: 0 at offset: 1229705
+badger 2022/05/19 20:43:04 INFO: Replay took: 2.917µs
+badger 2022/05/19 20:43:04 DEBUG: Value log discard stats empty
+badger 2022/05/19 20:43:04 INFO: DropAll called. Blocking writes...
+badger 2022/05/19 20:43:04 INFO: Writes flushed. Stopping compactions now...
+badger 2022/05/19 20:43:04 INFO: Deleted 1 SSTables. Now deleting value logs...
+badger 2022/05/19 20:43:04 INFO: Value logs deleted. Creating value log file: 0
+badger 2022/05/19 20:43:04 INFO: Deleted 1 value log files. DropAll done.
+badger 2022/05/19 20:43:04 INFO: Resuming writes
+badger 2022/05/19 21:28:50 DEBUG: Storing value log head: {Fid:0 Len:44 Offset:1417227}
+badger 2022/05/19 21:28:50 INFO: Got compaction priority: {level:0 score:1.73 dropPrefixes:[]}
+badger 2022/05/19 21:28:50 INFO: Running for level: 0
+badger 2022/05/19 21:28:50 DEBUG: LOG Compact. Added 64 keys. Skipped 0 keys. Iteration took: 541.458µs
+badger 2022/05/19 21:28:50 DEBUG: Discard stats: map[]
+badger 2022/05/19 21:28:50 INFO: LOG Compact 0->1, del 1 tables, add 1 tables, took 39.989916ms
+badger 2022/05/19 21:28:50 INFO: Compaction for level: 0 DONE
+badger 2022/05/19 21:28:50 INFO: Force compaction on level 0 done
