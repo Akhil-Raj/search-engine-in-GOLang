@@ -1,4 +1,4 @@
-# A web crawler written in Go
+# A search engine written in Golang and using Badger DB
 
 # How to run
 
