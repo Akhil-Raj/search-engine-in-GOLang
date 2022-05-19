@@ -17,7 +17,7 @@
 ##### Run the go module by typing "go run crawl.go". By default, the crawler will start crawling from the page "https://en.wikipedia.org/wiki/Main_Page" and will crawl upto 5 pages in testing mode i.e the created db won't be used for searching the keyword. You can change these flags as per your needs :
 ###### Use the flag '--starting_page' to provide your own wikipedia page
 ###### Use the flag '--num_pages' to give the maximum number of pages crawled. 
-###### Use the flag '--testing' to specify whether to use the resultant db for searching(true or false)
+ Use the flag '--testing' to specify whether to use the resultant db for searching(true or false)
 ###### For example : "go run crawl.go --starting_page https://en.wikipedia.org/wiki/Video_game --num_pages 3 --testing false"
 
 ##### The created badger db will be stored in /tmp/badger. If testing is set to false, a copy will be created in /tmp/dbForSearch/badger which will be used for searching
