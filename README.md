@@ -12,7 +12,7 @@
 
 #### You might have to install badger db. Use this link to do that : "https://pkg.go.dev/github.com/dgraph-io/badger#readme-installing"
 
-#### Created badger db :
+#### Create badger db(database storing the crawled pages) :
 
 ##### Run the go module by typing "go run crawl.go". By default, the crawler will start crawling from the page "https://en.wikipedia.org/wiki/Main_Page" and will crawl upto 5 pages in testing mode i.e the created db won't be used for searching the keyword. You can change these flags as per your needs :
 ###### Use the flag '--starting_page' to provide your own wikipedia page
