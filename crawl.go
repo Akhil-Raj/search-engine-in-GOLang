@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"os/exec"
 	"strconv"
 	"strings"
 	"time"
@@ -17,28 +18,31 @@ import (
 	"golang.org/x/net/html"
 )
 
-type options struct {
-}
-
 var pageFlag = flag.String("starting_page", "https://en.wikipedia.org/wiki/Main_Page", "Wikipedia page to start from")
 
 var numPagesFlag = flag.Int("num_pages", 5, "Maximum number of pages to crawl")
 
+var testing = flag.String("testing", "true", "Set this false to use the result of this crawl for keyword searching")
+
 func main() {
-	db, err := badger.Open(badger.DefaultOptions("/tmp/badger"))
+
+	flag.Parse()
+	args := flag.Args()
+	name := "/tmp/badger"
+
+	db, err := badger.Open(badger.DefaultOptions(name))
+
 	db.DropAll() // empty the badger db
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer db.Close()
 
-	flag.Parse()
-	args := flag.Args()
 	fmt.Println(args)
 	maxCount := *numPagesFlag
 	count := 0
 	countDivisor := 5
-	st := time.Now().Second()
+	start := time.Now()
 	// if len(args) < 2 {
 	// 	usage()
 	// 	fmt.Println("Please specify the keyword")
@@ -61,14 +65,17 @@ func main() {
 	go func() {
 		for uri := range filteredQueue {
 			count += 1
+
 			enqueue(uri, queue, db, keyCh)
 			if count == maxCount {
+
 				fmt.Printf("\nMax count of pages %d reached\n", maxCount)
 				break
 			}
 
 			if count%countDivisor == 0 {
 				fmt.Printf("\n%d / %d pages traversed\n", count, maxCount)
+
 			}
 		}
 		done <- true
@@ -78,8 +85,22 @@ func main() {
 	//done <- true
 
 	<-done
-	en := time.Now().Second()
-	fmt.Println("\nTotal time taken : ", en-st, " seconds\nTime per page : ", float64(en-st)/float64(count), " second(s)/page\n")
+	timeElapsed := int(time.Since(start).Seconds())
+	timePerPage := float32(timeElapsed) / float32(count)
+	fmt.Println("\nTotal time taken ~ ", timeElapsed, " seconds\nTime per page ~ ", timePerPage, " second(s)/page\n")
+
+	if *testing == "false" {
+		exec.Command("rm ", "/tmp/dbForSearch/*")
+		cmd := exec.Command("cp", "-r", name, "/tmp/dbForSearch/")
+
+		err := cmd.Run()
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		fmt.Printf("\nThis db will be used for search\n")
+	}
 }
 
 func findWord(db *badger.DB, keyword string, keyCh chan string) {
@@ -142,6 +163,7 @@ func filterQueue(in chan string, out chan string) { // Transfer links from 'queu
 
 //enqueue extracts the links(index of the db) and text(value of the db) from the webpage after crawling through the HTML code of the page
 func enqueue(uri string, queue chan string, db *badger.DB, keyCh chan string) {
+	//fmt.Println("\nNumber of goroutines : ", runtime.NumGoroutine(), "\n")
 	fmt.Println("fetching", uri)
 
 	transport := &http.Transport{
@@ -155,13 +177,18 @@ func enqueue(uri string, queue chan string, db *badger.DB, keyCh chan string) {
 		return
 	}
 	defer resp.Body.Close()
-
+	//fmt.Println("\nNumber of goroutines : ", runtime.NumGoroutine(), "\n")
 	//body, _ := ioutil.ReadAll(resp_.Body)
 	//bodyText = getBody(resp_.Body)
 	//fmt.Println("Body : ", string(body))
 
 	links := All(resp.Body)
 	resp, err = client.Get(uri)
+	if err != nil {
+		return
+	}
+	defer resp.Body.Close()
+	//fmt.Println("\nNumber of goroutines : ", runtime.NumGoroutine(), "\n")
 	text := getText(resp.Body)
 	err = db.Update(func(txn *badger.Txn) error { //Add the text of current page to the db
 		err := txn.Set([]byte(uri), []byte(text))
@@ -170,12 +197,15 @@ func enqueue(uri string, queue chan string, db *badger.DB, keyCh chan string) {
 	//fmt.Println("print1")
 	//keyCh <- uri
 	//fmt.Println("print1")
+	//fmt.Println("\nNumber of goroutines : ", runtime.NumGoroutine(), "\n")
 	for _, link := range links {
 		absolute := fixUrl(link, uri)
+		//fmt.Println("URI : ", link)
 		if uri != "" {
 			go func() { queue <- absolute }()
 		}
 	}
+	//fmt.Println("\nNumber of goroutines : ", runtime.NumGoroutine(), "\n")
 }
 
 // All takes a reader object (like the one returned from http.Client())
