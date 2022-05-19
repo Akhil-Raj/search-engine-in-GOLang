@@ -26,9 +26,6 @@ func main() {
 	flag.Parse()
 	args := flag.Args()
 	fmt.Println(args)
-	// maxCount := *numPagesFlag
-	// count := 0
-	// countDivisor := 5
 	start := time.Now()
 
 	findWord(db, *keyword)
@@ -51,10 +48,7 @@ func max(a, b int) int {
 	return b
 }
 
-func findWord(db *badger.DB, keyword string) { //find the keyword in the db
-
-	//time.Sleep(10000 * time.Millisecond)
-	//count := 1
+func findWord(db *badger.DB, keyword string) {
 
 	err := db.View(func(txn *badger.Txn) error {
 		opts := badger.DefaultIteratorOptions
@@ -76,7 +70,6 @@ func findWord(db *badger.DB, keyword string) { //find the keyword in the db
 					for _, en := range puncts {
 						word := st + keyword + en
 						if ind = strings.Index(s, word); ind != -1 {
-							//fmt.Printf("key=%s, value=%s\n", k, "")
 							fmt.Printf("\nKeyword found!\nKeyword : %s\nURI : %s\nStatement : %s\n", keyword, k, string(v)[max(0, ind-200):min(ind+200, l)])
 							break
 						}

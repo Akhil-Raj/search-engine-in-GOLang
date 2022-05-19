@@ -41,13 +41,8 @@ func main() {
 	fmt.Println(args)
 	maxCount := *numPagesFlag
 	count := 0
-	countDivisor := 5
+	countDivisor := 20
 	start := time.Now()
-	// if len(args) < 2 {
-	// 	usage()
-	// 	fmt.Println("Please specify the keyword")
-	// 	os.Exit(1)
-	// }
 
 	//keyword := args[1]
 
@@ -59,14 +54,13 @@ func main() {
 
 	// introduce a bool channel to synchronize execution of concurrently running crawlers
 	done := make(chan bool)
-	keyCh := make(chan string) // ignore for now
 
 	// pull from the filtered queue, add to the unfiltered queue
 	go func() {
 		for uri := range filteredQueue {
 			count += 1
 
-			enqueue(uri, queue, db, keyCh)
+			enqueue(uri, queue, db)
 			if count == maxCount {
 
 				fmt.Printf("\nMax count of pages %d reached\n", maxCount)
@@ -80,9 +74,6 @@ func main() {
 		}
 		done <- true
 	}()
-
-	//go findWord(db, keyword, keyCh)
-	//done <- true
 
 	<-done
 	timeElapsed := int(time.Since(start).Seconds())
@@ -105,13 +96,11 @@ func main() {
 
 func findWord(db *badger.DB, keyword string, keyCh chan string) {
 
-	//time.Sleep(10000 * time.Millisecond)
 	count := 1
 	for key := range keyCh {
 
 		err1 := db.View(func(txn *badger.Txn) error {
 			item, err2 := txn.Get([]byte(key))
-			//handle(err)
 
 			if err2 != nil {
 
@@ -120,9 +109,7 @@ func findWord(db *badger.DB, keyword string, keyCh chan string) {
 
 			}
 			err3 := item.Value(func(val []byte) error {
-				// This func with val would only be called if item.Value encounters no error.
 
-				// Accessing val here is valid.
 				fmt.Printf("\n Next page's text is: \n\n\n%s", val)
 
 				return nil
@@ -162,8 +149,7 @@ func filterQueue(in chan string, out chan string) { // Transfer links from 'queu
 }
 
 //enqueue extracts the links(index of the db) and text(value of the db) from the webpage after crawling through the HTML code of the page
-func enqueue(uri string, queue chan string, db *badger.DB, keyCh chan string) {
-	//fmt.Println("\nNumber of goroutines : ", runtime.NumGoroutine(), "\n")
+func enqueue(uri string, queue chan string, db *badger.DB) {
 	fmt.Println("fetching", uri)
 
 	transport := &http.Transport{
@@ -177,49 +163,55 @@ func enqueue(uri string, queue chan string, db *badger.DB, keyCh chan string) {
 		return
 	}
 	defer resp.Body.Close()
-	//fmt.Println("\nNumber of goroutines : ", runtime.NumGoroutine(), "\n")
-	//body, _ := ioutil.ReadAll(resp_.Body)
-	//bodyText = getBody(resp_.Body)
-	//fmt.Println("Body : ", string(body))
 
 	links := All(resp.Body)
+
 	resp, err = client.Get(uri)
 	if err != nil {
 		return
 	}
 	defer resp.Body.Close()
-	//fmt.Println("\nNumber of goroutines : ", runtime.NumGoroutine(), "\n")
+
 	text := getText(resp.Body)
 	err = db.Update(func(txn *badger.Txn) error { //Add the text of current page to the db
 		err := txn.Set([]byte(uri), []byte(text))
 		return err
 	})
-	//fmt.Println("print1")
-	//keyCh <- uri
-	//fmt.Println("print1")
-	//fmt.Println("\nNumber of goroutines : ", runtime.NumGoroutine(), "\n")
-	for _, link := range links {
+	var urls []string
+	for ind := 0; links[ind] != "\n"; ind++ {
+		link := links[ind]
 		absolute := fixUrl(link, uri)
-		//fmt.Println("URI : ", link)
-		if uri != "" {
-			go func() { queue <- absolute }()
+		if uri != "" && !strings.HasSuffix(strings.ToLower(link), "jpg") && !strings.HasSuffix(strings.ToLower(link), "jpeg") && !strings.HasSuffix(strings.ToLower(link), "png") && !strings.HasSuffix(strings.ToLower(link), "svg") {
+
+			urls = append(urls, absolute)
 		}
 	}
-	//fmt.Println("\nNumber of goroutines : ", runtime.NumGoroutine(), "\n")
+	go addToQueue(queue, urls)
+}
+
+func addToQueue(q chan string, urls []string) {
+	for _, url := range urls {
+		q <- url
+	}
 }
 
 // All takes a reader object (like the one returned from http.Client())
 // It returns a slice of strings representing the "href" attributes from
 // anchor links found in the provided html.
 // It does not close the reader passed to it.
-func All(httpBody io.Reader) []string {
-	links := []string{}                 //Store links
+func All(httpBody io.Reader) [100000]string {
+	links := [100000]string{}           //Store links
 	col := []string{}                   //
 	page := html.NewTokenizer(httpBody) // get tokens from HTML
+	linksFound := make(map[string]bool)
+	ind := 0
 
 	for {
 		tokenType := page.Next() // Get next token/tag
 		if tokenType == html.ErrorToken {
+
+			links[ind] = "\n"
+
 			return links
 		}
 		token := page.Token()
@@ -227,13 +219,19 @@ func All(httpBody io.Reader) []string {
 		if tokenType == html.StartTagToken && token.DataAtom.String() == "a" {
 			for _, attr := range token.Attr {
 				if attr.Key == "href" {
+
 					tl := trimHash(attr.Val) //trims hash from the link
-					col = append(col, tl)    // stores links in the present page
-					resolv(&links, col)      // add those links to the total list of unique links
+
+					col = append(col, tl) // stores links in the present page
+
+					resolv(&links, col, linksFound, &ind) // add those links to the total list of unique links
+
 				}
 			}
 		}
+
 	}
+
 }
 
 // trimHash slices a hash # from the link
@@ -265,10 +263,13 @@ func check(sl []string, s string) bool {
 
 // resolv adds links to the link slice and insures that there is no repetition
 // in our collection.
-func resolv(sl *[]string, ml []string) {
+func resolv(sl *[100000]string, ml []string, linksFound map[string]bool, ind *int) {
 	for _, str := range ml {
-		if check(*sl, str) == false {
-			*sl = append(*sl, str)
+		if _, ok := linksFound[str]; !ok {
+			(*sl)[*ind] = str
+			(*ind)++
+			linksFound[str] = true
+
 		}
 	}
 }
@@ -290,7 +291,6 @@ func getText(httpBody io.Reader) string {
 		if tokenType == html.StartTagToken && token.DataAtom.String() == "p" {
 			for { // Ignore references and take text while closing p tag isn't found
 				if tokenType == html.TextToken && (string(token.String()[0]) != "[") {
-					//fmt.Println(token)
 					res += token.String()
 				}
 				if tokenType == html.EndTagToken && token.DataAtom.String() == "p" {

@@ -30,13 +30,11 @@
 
 ### Time taken to crawl in the form (number of pages, time taken, time/page) :
 
-##### (10, 13s, 1.3s/page)
-##### (100, 163s, 1.63s/page)
-##### (400, 767s, 1.9175s/page)
-
-### Scope of improvemet :
-
-##### Creating a database is not fast enough. My guess is that it is due to the number of goroutines which are increasing exponentially with time. Need to find a way to quicken the process.
+##### (10, _, _)
+##### (100, 73s, 0.73s/page)
+##### (400, _, _)
+##### (1000, _, _)
+##### (10000, _, _)
 
 ##### Coming soon : 
 
