@@ -4,6 +4,8 @@
 
 #### Install go from the official website
 
+#### Download the repo and go into the root folder
+
 #### Enable dependency tracking by typing "go mod init example/gocrawler"
 
 #### Install requried modules using "go mod tidy"
