@@ -148,6 +148,13 @@ func filterQueue(in chan string, out chan string) { // Transfer links from 'queu
 	}
 }
 
+func max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
+}
+
 //enqueue extracts the links(index of the db) and text(value of the db) from the webpage after crawling through the HTML code of the page
 func enqueue(uri string, queue chan string, db *badger.DB) {
 	fmt.Println("fetching", uri)
@@ -181,7 +188,7 @@ func enqueue(uri string, queue chan string, db *badger.DB) {
 	for ind := 0; links[ind] != "\n"; ind++ {
 		link := links[ind]
 		absolute := fixUrl(link, uri)
-		if uri != "" && !strings.HasSuffix(strings.ToLower(link), "jpg") && !strings.HasSuffix(strings.ToLower(link), "jpeg") && !strings.HasSuffix(strings.ToLower(link), "png") && !strings.HasSuffix(strings.ToLower(link), "svg") {
+		if uri != "" && !strings.Contains(strings.ToLower(link[max(len(link)-15, 0):]), ".") {
 
 			urls = append(urls, absolute)
 		}

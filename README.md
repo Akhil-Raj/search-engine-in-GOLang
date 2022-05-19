@@ -30,12 +30,11 @@
 
 ### Time taken to crawl in the form (number of pages, time taken, time/page) :
 
-##### (10, _, _)
+##### (10, 8s, 0.8s/page)
 ##### (100, 73s, 0.73s/page)
-##### (400, _, _)
-##### (1000, _, _)
+##### (1000, 1165s, 1.165s/page)
 ##### (10000, _, _)
 
 ##### Coming soon : 
 
-###### Time the crawler takes to crawl 1000,10k,100k,1M pages
+###### Time the crawler takes to crawl 10k,100k,1M pages
