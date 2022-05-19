@@ -31,7 +31,7 @@
 ### Time taken to crawl in the form (number of pages, time taken, time/page) :
 
 ##### (10, 13s, 1.3s/page)
-##### (100, 163, 1.63s/page)
+##### (100, 163s, 1.63s/page)
 ##### (400, 767s, 1.9175s/page)
 
 ### Scope of improvemet :
