@@ -11,6 +11,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/dgraph-io/badger"
 	"golang.org/x/net/html"
@@ -37,7 +38,7 @@ func main() {
 	maxCount := *numPagesFlag
 	count := 0
 	countDivisor := 5
-
+	st := time.Now().Second()
 	// if len(args) < 2 {
 	// 	usage()
 	// 	fmt.Println("Please specify the keyword")
@@ -77,6 +78,8 @@ func main() {
 	//done <- true
 
 	<-done
+	en := time.Now().Second()
+	fmt.Println("\nTotal time taken : ", en-st, " seconds\nTime per page : ", float64(en-st)/float64(count), " second(s)/page\n")
 }
 
 func findWord(db *badger.DB, keyword string, keyCh chan string) {
