@@ -158,6 +158,7 @@ func max(a, b int) int {
 //enqueue extracts the links(index of the db) and text(value of the db) from the webpage after crawling through the HTML code of the page
 func enqueue(uri string, queue chan string, db *badger.DB) {
 	fmt.Println("fetching", uri)
+	st := time.Now()
 
 	transport := &http.Transport{
 		TLSClientConfig: &tls.Config{
@@ -188,12 +189,17 @@ func enqueue(uri string, queue chan string, db *badger.DB) {
 	for ind := 0; links[ind] != "\n"; ind++ {
 		link := links[ind]
 		absolute := fixUrl(link, uri)
-		if uri != "" && !strings.Contains(strings.ToLower(link[max(len(link)-15, 0):]), ".") {
+		if uri != "" && !strings.Contains(strings.ToLower(link[max(len(link)-15, 0):]), ".") && !strings.HasSuffix(strings.ToLower(link), "=edit") {
 
 			urls = append(urls, absolute)
 		}
 	}
 	go addToQueue(queue, urls)
+	fmt.Println("\nTime taken to fetch : ", time.Since(st).Seconds(), " seconds")
+	if time.Since(st).Seconds() > 10 {
+		fmt.Println("\nToo much time")
+		os.Exit(0)
+	}
 }
 
 func addToQueue(q chan string, urls []string) {

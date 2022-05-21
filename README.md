@@ -37,4 +37,4 @@
 
 ##### Coming soon : 
 
-###### Time the crawler takes to crawl 10k,100k,1M pages
+###### Time the crawler takes to crawl 10k,100k,1M pages. Currently crawling script becomes too slow(because it utilises too much cpu then) after about 2300 pages to crawl.
